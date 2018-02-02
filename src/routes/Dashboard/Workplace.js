@@ -22,19 +22,29 @@ const getValue = obj => Object.keys(obj).map(key => obj[key]).join(',');
 export default class Workplace extends PureComponent {
   state = {
     formValues: {},
-    params: {
+    queryParams: {
       orderItem: {},
       pagination: {
         current: 1,
         pageSize: 10,
       },
       sorter: {},
-    }
+      running: false,
+    },
+    runningParams: {
+      orderItem: {},
+      pagination: {
+        current: 1,
+        pageSize: 10,
+      },
+      sorter: {},
+      running: true,
+    },
   }
 
   componentDidMount() {
     const { dispatch } = this.props;
-    const { params } = this.state;
+    const { runningParams: params } = this.state;
     const newParams = {
       ...params,
       orderItem: {
@@ -53,7 +63,7 @@ export default class Workplace extends PureComponent {
     e.preventDefault();
 
     const { dispatch, form } = this.props;
-    const { params } = this.state;
+    const { queryParams: params } = this.state;
 
     form.validateFields((err, fieldsValue) => {
       if (err) return;
@@ -63,11 +73,11 @@ export default class Workplace extends PureComponent {
       };
       const newParams = {
         ...params,
-        product: values,
+        orderItem: values,
       };
       this.setState({
         formValues: values,
-        params: newParams,
+        queryParams: newParams,
       });
 
       dispatch({
@@ -100,12 +110,12 @@ export default class Workplace extends PureComponent {
         <Row gutter={18} style={{ marginLeft: 0, marginRight: 0 }}>
           <Col>
             <FormItem label="订单编号">
-              {getFieldDecorator('orderId')(<Input placeholder="请输入"/>)}
+              {getFieldDecorator('order.orderCode')(<Input placeholder="请输入"/>)}
             </FormItem>
           </Col>
           <Col>
             <FormItem label="会员手机号">
-              {getFieldDecorator('customerMobile')(<Input placeholder="请输入"/>)}
+              {getFieldDecorator('order.mobileNumber')(<Input placeholder="请输入"/>)}
             </FormItem>
           </Col>
           <Col>
@@ -120,7 +130,7 @@ export default class Workplace extends PureComponent {
 
   handleTaskTableChange = (pagination, filtersArg, sorter) => {
     const { dispatch } = this.props;
-    const { formValues, params } = this.state;
+    const { formValues, queryParams: params } = this.state;
 
     const filters = Object.keys(filtersArg).reduce((obj, key) => {
       const newObj = { ...obj };
@@ -133,11 +143,11 @@ export default class Workplace extends PureComponent {
       pagination: pagination,
     };
     if (filters.length === 0){
-      newParams.product = {
+      newParams.orderItem = {
         ...formValues,
       }
     } else {
-      newParams.product = {
+      newParams.orderItem = {
         ...formValues,
         ...filters,
       }
@@ -149,7 +159,7 @@ export default class Workplace extends PureComponent {
       };
     }
     this.setState({
-      params: newParams,
+      queryParams: newParams,
     });
 
     dispatch({
@@ -162,27 +172,28 @@ export default class Workplace extends PureComponent {
 
   handleRunningTaskTableChange = (pagination, filtersArg, sorter) => {
     const { dispatch } = this.props;
-    const { formValues } = this.state;
+    const { runningParams: params } = this.state;
 
-    const filters = Object.keys(filtersArg).reduce((obj, key) => {
-      const newObj = {
-        ...obj
-      };
-      newObj[key] = getValue(filtersArg[key]);
-      return newObj;
-    }, {});
-
-    const params = {
-      currentPage: pagination.current,
-      pageSize: pagination.pageSize,
-      ...formValues,
-      ...filters
+    const newParams = {
+      ...params,
+      pagination: pagination,
     };
     if (sorter.field) {
-      params.sorter = `${sorter.field}_${sorter.order}`;
+      newParams.sorter = {
+        field: sorter.field,
+        order: sorter.order,
+      };
     }
+    this.setState({
+      runningParams: newParams,
+    });
 
-    dispatch({type: 'task/fetchRunning', payload: params});
+    dispatch({
+      type: 'task/fetchRunning',
+      payload: {
+        params: JSON.stringify(newParams),
+      }
+    });
   }
 
   render() {
@@ -229,7 +240,7 @@ export default class Workplace extends PureComponent {
         <Row gutter={24}>
           <Col xl={12} lg={24} md={24} sm={24} xs={24}>
             <Card
-              title="查询今日服务"
+              title="查询服务"
               extra={<Link to = "/order/form" > 创建订单 </Link>}
               style={{ marginBottom: 24 }}
               bordered={false}
@@ -245,7 +256,7 @@ export default class Workplace extends PureComponent {
           <Col xl={12} lg={24} md={24} sm={24} xs={24}>
             <Card
               title="进行中的服务"
-              extra={<Link to = "/task/list" > 全部服务 </Link>}
+              // extra={<Link to = "/task/list" > 全部服务 </Link>}
               style={{ marginBottom: 24 }}
               bordered={false}
             >

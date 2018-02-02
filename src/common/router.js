@@ -129,13 +129,13 @@ export const getRouterData = (app) => {
       component: dynamicWrapper(app, [], () => import('../routes/User/RegisterResult')),
     },
     '/info/store/list': {
-      component: dynamicWrapper(app, ['store'], () => import('../routes/List/StoreList')),
+      component: dynamicWrapper(app, ['store', 'inventory'], () => import('../routes/List/StoreList')),
     },
     '/info/store/form': {
       component: dynamicWrapper(app, ['store'], () => import('../routes/Forms/StoreForm')),
     },
     '/info/store/profile': {
-      component: dynamicWrapper(app, ['store'], () => import('../routes/Profile/StoreProfile')),
+      component: dynamicWrapper(app, ['inventory'], () => import('../routes/Profile/StoreProfile')),
     },
     '/info/store/device': {
       component: dynamicWrapper(app, ['store'], () => import('../routes/Forms/DeviceForm')),

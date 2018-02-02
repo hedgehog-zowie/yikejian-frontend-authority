@@ -26,6 +26,7 @@ const menuData = [{
     name: '订单详情',
     icon: 'file-add',
     path: 'profile',
+    hideInMenu: true,
   }],
 }, {
   name: '会员管理',
@@ -62,10 +63,12 @@ const menuData = [{
     name: '礼品卡管理',
     icon: 'gift',
     path: 'gift/list',
+    hideInMenu: true,
   }, {
     name: '优惠券管理',
     icon: 'tag',
     path: 'coupon/list',
+    hideInMenu: true,
   },
 ],
 }, {

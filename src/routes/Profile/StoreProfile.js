@@ -1,100 +1,115 @@
 import React, { Component } from 'react';
-import { connect } from 'dva';
 import { Card, Form, Row, Col, InputNumber, Button } from 'antd';
+import { connect } from 'dva';
+import moment from 'moment';
 import PageHeaderLayout from '../../layouts/PageHeaderLayout';
 import DescriptionList from '../../components/DescriptionList';
 import styles from './StoreProfile.less';
 
 const FormItem = Form.Item;
 
-const tabListNoTitle = [{
-  key: '01',
-  tab: '小睡',
-}, {
-  key: '02',
-  tab: '按摩',
-}];
-const subTabListNoTitle = [{
-  key: '20180101',
-  tab: '20180101',
-}, {
-  key: '20180102',
-  tab: '20180102',
-}, {
-  key: '20180103',
-  tab: '20180103',
-}, {
-  key: '20180104',
-  tab: '20180104',
-}, {
-  key: '20180105',
-  tab: '20180105',
-}];
-const contentListNoTitle = {
-  '01-20180101': <p>01-20180101 content</p>,
-  '01-20180102': <p>01-20180102 content</p>,
-  '01-20180103': <p>01-20180103 content</p>,
-  '01-20180104': <p>01-20180104 content</p>,
-  '01-20180105': <p>01-20180105 content</p>,
-  '02-20180101': <p>02-20180101 content</p>,
-  '02-20180102': <p>02-20180102 content</p>,
-  '02-20180103': <p>02-20180103 content</p>,
-  '02-20180104': <p>02-20180104 content</p>,
-  '02-20180105': <p>02-20180105 content</p>,
-};
-
 @connect(state => ({
-  store: state.store,
+  inventory: state.inventory,
 }))
-class StoreProfile extends Component {
-  state = {
-    key: '01',
-    subKey: '',
-    disabled: false,
+@Form.create()
+export default class StoreProfile extends Component {
+  constructor(props){
+    super(props);
+    const days = [];
+    const timestamp = new Date().getTime();
+    days.push(moment(timestamp).format('YYYYMMDD'));
+    days.push(moment(timestamp + 1 * 24 * 60 * 60 * 1000).format('YYYYMMDD'));
+    days.push(moment(timestamp + 2 * 24 * 60 * 60 * 1000).format('YYYYMMDD'));
+    days.push(moment(timestamp + 3 * 24 * 60 * 60 * 1000).format('YYYYMMDD'));
+    days.push(moment(timestamp + 4 * 24 * 60 * 60 * 1000).format('YYYYMMDD'));
+    const { inventory: { store, storeProducts } } = this.props;
+    this.state = {
+      days: days,
+      storeId: store.storeId,
+      productId: '' || storeProducts[0].product.productId,
+      day: moment(timestamp).format('YYYYMMDD'),
+    }
   }
 
   componentDidMount() {
-    const { dispatch } = this.props;
+    const { dispatch, inventory: { store, storeProducts } } = this.props;
+    const { storeId, productId, day } = this.state;
     dispatch({
-      type: 'store/fetchStore',
-      type: 'store/fetchProduct',
-      type: 'store/fetchDevice',
+      type: 'inventory/getInventories',
+      payload: {
+        storeId: storeId,
+        productId: productId,
+        day: day,
+      }
     });
   }
 
-  onTabChange(key) {
-    this.setState({ key: key });
+  onProductTabChange(key) {
+    const { dispatch } = this.props;
+    const { storeId, productId, day } = this.state;
+    this.setState({ productId: key });
+    dispatch({
+      type: 'inventory/getInventories',
+      payload: {
+        storeId: storeId,
+        productId: key,
+        day: day,
+      }
+    });
   }
 
-  onSubTabChange(subKey) {
-    this.setState({ subKey: subKey });
+  onDayTabChange(subKey) {
+    const { dispatch } = this.props;
+    const { storeId, productId, day } = this.state;
+    this.setState({ day: subKey });
+    dispatch({
+      type: 'inventory/getInventories',
+      payload: {
+        storeId: storeId,
+        productId: productId,
+        day: subKey,
+      }
+    });
   }
 
-  // To generate mock Form.Item
   getFields() {
     const count = 100;
     const { getFieldDecorator } = this.props.form;
+    const { inventory: { inventories } } = this.props;
     const children = [];
-    for (let i = 0; i < count; i++) {
+    inventories.map((inventory) => {
       children.push(
-        <Col span={4} key={i} style={{ display: i < count ? 'block' : 'none' }}>
-          <FormItem label={`Field ${i}`}>
-            {getFieldDecorator(`field-${i}`, {
-              initialValue: i,
+        <Col span={3} key={inventory.inventoryId}>
+          <FormItem label={inventory.pieceTime}>
+            {getFieldDecorator(`inventory-${inventory.inventoryId}`, {
+              initialValue: inventory.stock,
             })(
-              <InputNumber min={0} max={4} disabled={this.state.disabled} placeholder="可预约次数" />
+              <InputNumber min={inventory.bookedStock} disabled={inventory.stock <= inventory.bookedStock} placeholder="最大可预约次数" />
             )}
           </FormItem>
         </Col>
       );
-    }
+    });
     return children;
   }
 
   handleSubmit = (e) => {
     e.preventDefault();
+    const inventories = [];
     this.props.form.validateFields((err, values) => {
       console.log('Received values of form: ', values);
+      Object.keys(values).map((key) => {
+        const inventoryId = key.substr(10);
+        inventories.push({inventoryId: inventoryId, stock: values[key]});
+      });
+      console.log('trans to inventories: ', inventories);
+    });
+    const { dispatch } = this.props;
+    dispatch({
+      type: 'inventory/putInventories',
+      payload: {
+        inventories: inventories,
+      }
     });
   }
 
@@ -103,20 +118,30 @@ class StoreProfile extends Component {
   }
 
   render() {
-    const { store: { devicesData, fetchDeviceLoading } } = this.props;
+    const { inventory: { storeProducts, loading } } = this.props;
+    const tabListNoTitle = [];
+    storeProducts.map((storeProduct) => {
+      tabListNoTitle.push({key: storeProduct.product.productId, tab: storeProduct.product.productName});
+    });
+    const { days } = this.state;
+    const subTabListNoTitle = [];
+    days.map((day) => {
+      subTabListNoTitle.push({key: day, tab: day});
+    });
+
     return (
       <PageHeaderLayout title="预约管理">
         <Card
           style={{ width: '100%' }}
           tabList={tabListNoTitle}
-          onTabChange={(key) => this.onTabChange(key)}
+          onTabChange={(key) => this.onProductTabChange(key)}
         >
           <Card
             style={{ width: '100%' }}
             tabList={subTabListNoTitle}
-            onTabChange={(key) => this.onSubTabChange(key)}
+            onTabChange={(key) => this.onDayTabChange(key)}
+            loading={loading}
           >
-            {contentListNoTitle[this.state.key + '-'+ this.state.subKey]}
             <Form layout="vertical" hideRequiredMark onSubmit={this.handleSubmit}>
               <Row gutter={8}>{this.getFields()}</Row>
               <Row>
@@ -125,8 +150,8 @@ class StoreProfile extends Component {
                   <Button style={{ marginLeft: 8 }} onClick={this.handleReset}>
                     重置
                   </Button>
-          </Col>
-        </Row>
+                </Col>
+              </Row>
             </Form>
           </Card>
         </Card>
@@ -135,7 +160,7 @@ class StoreProfile extends Component {
   }
 }
 
-export default connect(state => ({
-  collapsed: state.global.collapsed,
-  submitting: state.store.submitting,
-}))(Form.create()(StoreProfile));
+// export default connect(state => ({
+//   collapsed: state.global.collapsed,
+//   submitting: state.store.submitting,
+// }))(Form.create()(StoreProfile));

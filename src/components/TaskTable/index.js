@@ -3,8 +3,19 @@ import moment from 'moment';
 import { Table, Alert, Badge, Divider } from 'antd';
 import styles from './index.less';
 
-const statusMap = ['default', 'processing', 'success'];
-
+const badgeMap = {
+  NOT_SERVE: 'default',
+  SERVING: 'processing',
+  SERVED: 'success',
+  CANCELED: 'warn',
+};
+const status = ['未服务', '服务中', '已服务', '已取消'];
+const statusMap = {
+  NOT_SERVE: '未服务',
+  SERVING: '服务中',
+  SERVED: '已服务',
+  CANCELED: '已取消',
+};
 class TaskTable extends PureComponent {
 
   handleTableChange = (pagination, filters, sorter) => {
@@ -13,39 +24,47 @@ class TaskTable extends PureComponent {
 
   render() {
     const { data: { list, pagination }, loading } = this.props;
-    const status = ['未开始', '运行中', '已完成'];
+
     const columns = [
-      {
-        title: '订单号',
-        dataIndex: 'orderId',
-      },
+      // {
+      //   title: '订单号',
+      //   dataIndex: 'orderCode',
+      // },
       {
         title: '顾客',
-        dataIndex: 'customer',
+        dataIndex: 'experiencer',
+      },
+      {
+        title: '预约时间',
+        dataIndex: 'bookedTime',
       },
       {
         title: '产品',
-        dataIndex: 'product',
+        dataIndex: 'productName',
       },
       {
         title: '状态',
-        dataIndex: 'status',
+        dataIndex: 'orderItemStatus',
         filters: [
           {
             text: status[0],
-            value: 0,
+            value: 'NOT_SERVE',
           },
           {
             text: status[1],
-            value: 1,
+            value: 'SERVING',
           },
           {
             text: status[2],
-            value: 2,
+            value: 'SERVED',
+          },
+          {
+            text: status[3],
+            value: 'CANCELED',
           },
         ],
         render(val) {
-          return <Badge status={statusMap[val]} text={status[val]} />;
+          return <Badge status={badgeMap[val]} text={statusMap[val]} />;
         },
       },
       {

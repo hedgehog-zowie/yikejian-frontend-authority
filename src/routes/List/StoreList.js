@@ -10,6 +10,7 @@ import styles from './StoreList.less';
 
 @connect(state => ({
   store: state.store,
+  inventory: state.inventory,
 }))
 export default class StoreList extends PureComponent {
   componentDidMount() {
@@ -30,7 +31,12 @@ export default class StoreList extends PureComponent {
   }
 
   handleClickProfile(id) {
-    this.props.dispatch(routerRedux.push(`/info/store/profile`));
+    const { dispatch } = this.props;
+    dispatch({
+      type: 'inventory/init',
+      payload: {storeId: id},
+    });
+    // this.props.dispatch(routerRedux.push(`/info/store/profile`));
   }
 
   handleClickDevice(id) {

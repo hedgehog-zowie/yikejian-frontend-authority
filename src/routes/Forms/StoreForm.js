@@ -1,11 +1,11 @@
 import React, { PureComponent } from 'react';
 import { Card, Button, Form, Icon, Col, Row, DatePicker, TimePicker, Input, Select, Popover, Checkbox } from 'antd';
 import { connect } from 'dva';
+import moment from 'moment';
 import PageHeaderLayout from '../../layouts/PageHeaderLayout';
 import FooterToolbar from '../../components/FooterToolbar';
 import DeviceTableForm from './DeviceTableForm';
 import styles from './style.less';
-import moment from 'moment';
 
 const CheckboxGroup = Checkbox.Group;
 const { Option } = Select;
